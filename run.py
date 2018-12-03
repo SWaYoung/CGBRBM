@@ -43,8 +43,8 @@ filter_height = 5  # 卷积核尺寸
 filter_width = 5  # 卷积核尺寸
 offset_height = 80  # 截取图片的起始高度（从上至下）
 offset_width = 270  # 截取图片的其实宽度（从左至右）
-target_height = 350  # 截取图片的高度 700 
-target_width = 350  # 截取图片的宽度 700
+target_height = 700  # 截取图片的高度 700 
+target_width = 700  # 截取图片的宽度 700
 resize_height = 64  # 缩放图片的高度
 resize_width = 64  # 缩放图片的宽度
 resize_method = 0  # 缩放图片的方式
@@ -147,6 +147,7 @@ print("Time usage:", time_dif)
 print('DBSCAN...')
 start_time = time.time()
 dbscan_label = DBSCAN(eps=2.5, min_samples=3).fit_predict(new_dim_points)  # eps 距离的阈值， min_sample，成为核心所需要的样本的阈值
+assert len(np.unique(dbscan_label)) == total_cat
 plt.figure()
 plt.scatter(new_dim_points[:, 0], new_dim_points[:, 1], c=dbscan_label)  # 画出dbscan分类后得到的所有坐标，一个颜色是一类
 plt.show()

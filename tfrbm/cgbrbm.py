@@ -128,12 +128,12 @@ class CGBRBM(GBRBM):
             n_batches = 1
 
         if shuffle:
-            dataset = tf.data.Dataset.from_tensor_slices((self.raw_input_x, self.raw_input_y)).map(
-                lambda x, y: self.build_image_dataset(x, y)).shuffle(n_data, reshuffle_each_iteration=True).batch(
-                batch_size).repeat(n_epoches)
+            dataset = tf.data.Dataset.from_tensor_slices((self.raw_input_x, self.raw_input_y)).shuffle(n_data, reshuffle_each_iteration=True).map(
+                lambda x, y: self.build_image_dataset(x, y), num_parallel_calls=4).batch(
+                batch_size).repeat(n_epoches).prefetch(1)
         else:
             dataset = tf.data.Dataset.from_tensor_slices((self.raw_input_x, self.raw_input_y)).map(
-                lambda x, y: self.build_image_dataset(x, y)).batch(batch_size).repeat(n_epoches)
+                lambda x, y: self.build_image_dataset(x, y), num_parallel_calls=4).batch(batch_size).repeat(n_epoches).prefetch(1)
 
         iterator = dataset.make_initializable_iterator()
         image_batch_get_next, label_batch_get_next = iterator.get_next()
@@ -219,7 +219,7 @@ class CGBRBM(GBRBM):
             n_batches = 1
 
         dataset = tf.data.Dataset.from_tensor_slices((self.raw_input_x, self.raw_input_y)).map(
-            lambda x, y: self.build_image_dataset(x, y)).batch(batch_size)
+            lambda x, y: self.build_image_dataset(x, y), num_parallel_calls=4).batch(batch_size).prefetch(1)
 
         iterator = dataset.make_initializable_iterator()
         image_batch_get_next, label_batch_get_next = iterator.get_next()

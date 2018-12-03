@@ -6,30 +6,40 @@ import numpy as np
 import sys
 from .gbrbm import GBRBM
 import pickle
+import os
 
 
 #
 class CGBRBM(GBRBM):
     def __init__(self,
-                 n_visible=8192,
-                 n_hidden=800,
-                 chanel_increase=16,
-                 filter_height=5,  # 卷积核尺寸
-                 filter_width=5,  # 卷积核尺寸
-                 offset_height=80,
-                 offset_width=270,
-                 target_height=700,
-                 target_width=700,
-                 resize_height=64,
-                 resize_width=64,
-                 resize_method=0,  # 0:BILINEAR; 1:NEAREST_NEIGHBOR; 2:BICUBIC; 3:AREA
+                 n_visible,
+                 n_hidden,
+                 chanel_increase,
+                 filter_height,  # 卷积核尺寸
+                 filter_width,  # 卷积核尺寸
+                 offset_height,
+                 offset_width,
+                 target_height,
+                 target_width,
+                 resize_height,
+                 resize_width,
+                 resize_method,  # 0:BILINEAR; 1:NEAREST_NEIGHBOR; 2:BICUBIC; 3:AREA
                  **kwargs):
 
         # n_visible                 显层个数
         # n_hidden                  隐层个数
 
-        # chanel_increase           chanel 第一层之后的增加个数，第二层之后每次变两倍
-        # filter_sizes = [5， 5]     卷积核尺寸
+        # chanel_increase           chanel 第一层之后的增加个数，第二层之后每次变两倍(目前用16)
+        # filter_height             卷积核高度，目前用5
+        # filter_width              卷积核宽度，目前用5
+        # offset_height             截取图片的起始高度（从上至下）
+        # offset_width              截取图片的其实宽度（从左至右）
+        # target_height             截取图片的高度 700
+        # target_width              截取图片的宽度 700
+        # resize_height             缩放图片的高度
+        # resize_width              缩放图片的宽度
+        # resize_method             缩放图片的方式
+        # resize_method             0:BILINEAR; 1:NEAREST_NEIGHBOR; 2:BICUBIC; 3:AREA
 
         # convolution layer and image attributes
         self.n_visible = n_visible
@@ -46,21 +56,29 @@ class CGBRBM(GBRBM):
         # set convolution layers' weight and bias
         filter_shape = self.filter_sizes.copy()
         filter_shape.extend([1, self.chanel_increase])
+        # 第一层的filter
         self.w1 = tf.get_variable(name="w1", shape=filter_shape,
                                   initializer=tf.initializers.truncated_normal(stddev=0.1))
+        # 第一层的bias
         self.b1 = tf.get_variable(name='b1', initializer=tf.constant(0.1, shape=[self.chanel_increase]))
         filter_shape = self.filter_sizes.copy()
         filter_shape.extend([self.chanel_increase, self.chanel_increase * 2])
+        # 第二层的filter
         self.w2 = tf.get_variable(name="w2", shape=filter_shape,
                                   initializer=tf.initializers.truncated_normal(stddev=0.1))
+        # 第二层的bias
         self.b2 = tf.get_variable(name='b2', initializer=tf.constant(0.1, shape=[self.chanel_increase * 2]))
 
         # predefine
         self.matrix_counter = 0
+        # 定义几个placeholder
         self.raw_input_x = tf.placeholder(tf.string, [None], name="input_x")
         self.raw_input_y = tf.placeholder(tf.string, [None], name="input_y")
         self.conv_input = tf.placeholder(dtype=tf.float32, shape=[None, None, None, None], name="input")
         self.flatten = None
+        # 清楚之前的pickle file
+        for file in os.listdir('./pickle'):
+            os.remove(os.path.join('./pickle', file))
 
         GBRBM.__init__(self, n_visible, n_hidden, **kwargs)
 
@@ -82,7 +100,7 @@ class CGBRBM(GBRBM):
         self.flatten = tf.reshape(pool2, [-1, self.n_visible])
 
     def build_image_dataset(self, input_x,
-                            input_y,):
+                            input_y, ):
         image = tf.read_file(input_x)
         decoded_image = tf.image.decode_jpeg(image)
         cropped_image = tf.image.crop_to_bounding_box(decoded_image, self.offset_height, self.offset_width,
@@ -139,10 +157,10 @@ class CGBRBM(GBRBM):
             for _ in r_batches:
                 feature_temp, label_temp = self.sess.run([image_batch_get_next, label_batch_get_next])
                 convolved_images = self.sess.run(self.flatten, feed_dict={self.conv_input: feature_temp})
-                if file_counter == 0:
-                    with open('./pickle/feature_obj' + str(self.matrix_counter) + '.pkl', 'wb') as p:
+                if file_counter == 0:  # 再第一遍的时候保存convolve之后的图片数据
+                    with open('./pickle/feature_obj' + str(self.matrix_counter).zfill(4) + '.pkl', 'wb') as p:
                         pickle.dump(convolved_images, p)
-                    with open('./pickle/label_obj' + str(self.matrix_counter) + '.pkl', 'wb') as p:
+                    with open('./pickle/label_obj' + str(self.matrix_counter).zfill(4) + '.pkl', 'wb') as p:
                         pickle.dump(label_temp, p)
                     self.matrix_counter += 1
 
@@ -165,7 +183,7 @@ class CGBRBM(GBRBM):
             file_counter += 1
         return errs
 
-    def ctransform(self,
+    def ctransform(self,  # 通过输入之前保存的convolve之后的图片数据，得到cgbrbm的隐层
                    data_x,
                    batch_size=30):
         n_data = data_x.shape[0]
@@ -189,8 +207,8 @@ class CGBRBM(GBRBM):
 
         return outputs
 
-    def ctransform_raw(self,
-                       raw_data_x,
+    def ctransform_spy(self,  # 用于把spy转换为隐层（先读取，剪切，缩放，convolve然后放进rbm）
+                       raw_data_x,  # 输入数据位未经处理的原始图片路径
                        raw_data_y,
                        batch_size):
         n_data = raw_data_x.shape[0]
@@ -215,9 +233,9 @@ class CGBRBM(GBRBM):
             feature_temp, label_temp = self.sess.run([image_batch_get_next, label_batch_get_next])
             convolved_images = self.sess.run(self.flatten, feed_dict={self.conv_input: feature_temp})
 
-            with open('./pickle/feature_spy' + str(spy_file_counter) + '.pkl', 'wb') as p:
+            with open('./pickle/feature_spy' + str(spy_file_counter).zfill(4) + '.pkl', 'wb') as p:
                 pickle.dump(convolved_images, p)
-            with open('./pickle/label_spy' + str(spy_file_counter) + '.pkl', 'wb') as p:
+            with open('./pickle/label_spy' + str(spy_file_counter).zfill(4) + '.pkl', 'wb') as p:
                 pickle.dump(label_temp, p)
             spy_file_counter += 1
             output = self.transform(convolved_images)
@@ -226,39 +244,3 @@ class CGBRBM(GBRBM):
                 output_counter += 1
 
         return outputs
-
-    # def cget_error(self,
-    #                data_x,
-    #                batch_size=30,
-    #                offset_height=50,
-    #                offset_width=250,
-    #                target_height=750,
-    #                target_width=750,
-    #                resize_height=256,
-    #                resize_width=256,
-    #                resize_method=3):
-    #     n_data = data_x.shape[0]
-    #
-    #     if batch_size > 0:
-    #         n_batches = n_data // batch_size + (0 if n_data % batch_size == 0 else 1)
-    #     else:
-    #         n_batches = 1
-    #
-    #     errors = np.zeros((n_batches,))
-    #     error_counter = 0
-    #
-    #     dataset = tf.data.Dataset.from_tensor_slices(self.raw_input_x).map(
-    #         lambda x, y: self.build_image_dataset(x, y)).batch(batch_size)
-    #
-    #     iterator = dataset.make_initializable_iterator()
-    #     batch_x = iterator.get_next()
-    #     self.sess.run(iterator.initializer, feed_dict={self.raw_input_x: data_x})
-    #
-    #     r_batches = range(n_batches)
-    #     for _ in r_batches:
-    #         batch_x = self.sess.run(self.flatten, feed_dict={self.conv_input: self.sess.run(batch_x)})
-    #         error = self.get_err(batch_x)
-    #         errors[error_counter] = error
-    #         error_counter += 1
-    #
-    #     return errors

@@ -85,14 +85,11 @@ class CGBRBM(GBRBM):
     def build_convolution_max_pooling(self):
 
         # convolution and max-pooling layers
-        filter_shape = self.filter_sizes.copy()
-        filter_shape.extend([1, self.chanel_increase])
+
         conv1 = tf.nn.conv2d(self.conv_input, self.w1, strides=[1, 1, 1, 1], padding="SAME", name="conv1")
         relu1 = tf.nn.relu(tf.nn.bias_add(conv1, self.b1), name='relu1')
         pool1 = tf.nn.max_pool(relu1, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME", name="pool1")
 
-        filter_shape = self.filter_sizes.copy()
-        filter_shape.extend([self.chanel_increase, self.chanel_increase * 2])
         conv2 = tf.nn.conv2d(pool1, self.w2, strides=[1, 1, 1, 1], padding="SAME", name="conv2")
         relu2 = tf.nn.relu(tf.nn.bias_add(conv2, self.b2), name='relu2')
         pool2 = tf.nn.max_pool(relu2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME", name="pool2")
@@ -100,7 +97,7 @@ class CGBRBM(GBRBM):
         self.flatten = tf.reshape(pool2, [-1, self.n_visible])
 
     def build_image_dataset(self, input_x,
-                            input_y, ):
+                            input_y):
         image = tf.read_file(input_x)
         decoded_image = tf.image.decode_jpeg(image)
         cropped_image = tf.image.crop_to_bounding_box(decoded_image, self.offset_height, self.offset_width,
@@ -114,11 +111,11 @@ class CGBRBM(GBRBM):
     def cfit(self,
              raw_data_x,  # 图片路径，np array
              raw_data_y,  # label, np array
-             n_epoches=10,
+             n_epochs=10,
              batch_size=30,
              shuffle=True,
              verbose=True):
-        assert n_epoches > 0
+        assert n_epochs > 0
 
         n_data = raw_data_x.shape[0]
 
@@ -130,10 +127,10 @@ class CGBRBM(GBRBM):
         if shuffle:
             dataset = tf.data.Dataset.from_tensor_slices((self.raw_input_x, self.raw_input_y)).shuffle(n_data, reshuffle_each_iteration=True).map(
                 lambda x, y: self.build_image_dataset(x, y), num_parallel_calls=4).batch(
-                batch_size).repeat(n_epoches).prefetch(1)
+                batch_size).repeat(n_epochs).prefetch(1)
         else:
             dataset = tf.data.Dataset.from_tensor_slices((self.raw_input_x, self.raw_input_y)).map(
-                lambda x, y: self.build_image_dataset(x, y), num_parallel_calls=4).batch(batch_size).repeat(n_epoches).prefetch(1)
+                lambda x, y: self.build_image_dataset(x, y), num_parallel_calls=4).batch(batch_size).repeat(n_epochs).prefetch(1)
 
         iterator = dataset.make_initializable_iterator()
         image_batch_get_next, label_batch_get_next = iterator.get_next()
@@ -142,7 +139,7 @@ class CGBRBM(GBRBM):
         errs = []
 
         file_counter = 0
-        for e in range(n_epoches):
+        for e in range(n_epochs):
             if verbose and not self._use_tqdm:
                 print('Epoch: {:d}'.format(e))
 

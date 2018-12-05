@@ -62,3 +62,10 @@ if tf.test.gpu_device_name():
     print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
 else:
     print("Please install GPU version of TF")
+    
+
+writer = tf.summary.FileWriter('.')
+writer.add_graph(tf.get_default_graph())
+x = 5
+def print5():
+    print(x)

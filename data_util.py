@@ -24,7 +24,7 @@ import os
 #                 pass
 #     return contents, labels  # contents: 两维list，包含所有句子，每个句子一个list；labels：list，类
 
-def create_raw_data(dirname, num_each_cat):
+def create_raw_data(dirname, num_each_cat):  # 通过路径和文件名 创建x,y
     cats = []
     data = []
     dirs = os.listdir(dirname)

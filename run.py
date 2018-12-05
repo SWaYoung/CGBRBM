@@ -6,7 +6,7 @@ import os
 import time
 from datetime import timedelta
 import numpy as np
-import tensorflow as tf
+# import tensorflow as tf
 from sklearn.cluster import DBSCAN
 import data_util
 from tfrbm.cgbrbm import CGBRBM
@@ -50,16 +50,16 @@ resize_width = 64  # 缩放图片的宽度
 resize_method = 0  # 缩放图片的方式
 num_each_cat = 1000  # 每类文件提取多少
 total_spy = 6  # spy 的总数量，目前6个，三类，之后测试更多类的时候再更改
-
+n_epochs = 10
 spy_batch_size = 6  # spy的batch数量
 batch_size = 30  # 输入文件的batch数量
-n_visible = (resize_height / 4 * resize_width / 4) * (chanel_increase * 2)  # 显层数量（自动计算）
+n_visible = int(resize_height / 4 * resize_width / 4) * (chanel_increase * 2)  # 显层数量（自动计算）
 n_hidden = 1000  # 隐层数量
 
 # %% loading data & initilize cgbrbm...
 print("loading data & initilize cgbrbm...")
 start_time = time.time()
-cgbrbm = CGBRBM(int(n_visible),  # initialize cgbrbm
+cgbrbm = CGBRBM(n_visible,  # initialize cgbrbm
                 n_hidden,
                 chanel_increase,
                 filter_height,
@@ -80,7 +80,7 @@ print("Time usage:", time_dif)
 # %% Training and evaluating...
 print('Training and evaluating...')
 start_time = time.time()
-errs = cgbrbm.cfit(x_train, y_train, n_epoches=10, batch_size=batch_size)  # train cgbrbm and get error
+errs = cgbrbm.cfit(x_train, y_train, n_epochs=n_epochs, batch_size=batch_size)  # train cgbrbm and get error
 time_dif = get_time_dif(start_time)
 print("Time usage:", time_dif)
 
@@ -197,6 +197,7 @@ print("Time usage:", time_dif)
 
 # %%使用dbscan_label把坐标点分类，目前是三类，如有更多类需要更改，（用于验证，实际使用可以不用）
 print('get points seperated by dbscan...')
+assert len(dbscan_label) == total_cat
 assert dbscan_label[-6] == dbscan_label[-5]
 assert dbscan_label[-4] == dbscan_label[-3]
 assert dbscan_label[-2] == dbscan_label[-1]

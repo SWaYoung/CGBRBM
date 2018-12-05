@@ -47,12 +47,6 @@ with tf.Session() as sess:
     sess.run(iterator.initializer, feed_dict={xp: path})
     value1 = sess.run([result_it, label_it])
     value2 = sess.run([result_it, label_it])
-#    result = iterator.get_next().eval()
-# print (type(image))
-# print (type(image.eval()))
-# print(image.eval().shape)
-#    print(tf.shape(file_queue))
-#    print(tf.shape(file_queue_new))
 
 plt.figure
 plt.imshow(value1[0], cmap='gray')

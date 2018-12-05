@@ -30,7 +30,7 @@ def create_raw_data(dirname, num_each_cat):  # 通过路径和文件名 创建x,
     dirs = os.listdir(dirname)
     for i in dirs:
         temp = os.path.join(dirname, i)
-        if os.path.isdir(temp) and i != 'test' and i != 'spy':
+        if os.path.isdir(temp) and i != 'test' and i != 'spy' and i != 'archive' and i != 'result':
             cats.append(temp)
     iterator = iter(cats)
     for i in range(len(cats)):

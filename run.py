@@ -38,23 +38,23 @@ def print_tsne(data, label, color):
 # %% define variables
 base_data_dir = '../Data/Image_Classification'  # 所有数据文件夹的根目录
 
-chanel_increase = 16  # 第一层卷积后的chanel数量
+chanel_increase = 16  # 第一层卷积后的chanel数量 16
 filter_height = 5  # 卷积核尺寸
 filter_width = 5  # 卷积核尺寸
 offset_height = 80  # 截取图片的起始高度（从上至下）
 offset_width = 270  # 截取图片的其实宽度（从左至右）
-target_height = 700  # 截取图片的高度 700 
-target_width = 700  # 截取图片的宽度 700
-resize_height = 64  # 缩放图片的高度
-resize_width = 64  # 缩放图片的宽度
-resize_method = 0  # 缩放图片的方式
+target_height = 350  # 截取图片的高度 700 
+target_width = 350  # 截取图片的宽度 700
+resize_height = 64  # 缩放图片的高度 64
+resize_width = 64  # 缩放图片的宽度 64
+resize_method = 3  # 缩放图片的方式 0
 num_each_cat = 1000  # 每类文件提取多少
 total_spy = 6  # spy 的总数量，目前6个，三类，之后测试更多类的时候再更改
 n_epochs = 10
 spy_batch_size = 6  # spy的batch数量
 batch_size = 30  # 输入文件的batch数量
 n_visible = int(resize_height / 4 * resize_width / 4) * (chanel_increase * 2)  # 显层数量（自动计算）
-n_hidden = 1000  # 隐层数量
+n_hidden = 2000  # 隐层数量 1000
 
 # %% loading data & initilize cgbrbm...
 print("loading data & initilize cgbrbm...")
@@ -73,7 +73,7 @@ cgbrbm = CGBRBM(n_visible,  # initialize cgbrbm
                 resize_method)
 
 x_train, y_train, total_cat = data_util.create_raw_data(base_data_dir, num_each_cat)  # 得到输入，和一共多少种类total_cat
-x_spy, y_spy = data_util.create_spy_data(base_data_dir, total_spy)
+x_spy, y_spy = data_util.create_spy_data(base_data_dir, total_spy)  # spy 要用平均质量的图片
 time_dif = get_time_dif(start_time)
 print("Time usage:", time_dif)
 
@@ -146,7 +146,7 @@ print("Time usage:", time_dif)
 # 参照 https://www.cnblogs.com/pinard/p/6217852.html 的解释
 print('DBSCAN...')
 start_time = time.time()
-dbscan_label = DBSCAN(eps=2.5, min_samples=3).fit_predict(new_dim_points)  # eps 距离的阈值， min_sample，成为核心所需要的样本的阈值
+dbscan_label = DBSCAN(eps=4, min_samples=3).fit_predict(new_dim_points)  # eps 距离的阈值， min_sample，成为核心所需要的样本的阈值 2.5, 3
 assert len(np.unique(dbscan_label)) == total_cat
 plt.figure()
 plt.scatter(new_dim_points[:, 0], new_dim_points[:, 1], c=dbscan_label)  # 画出dbscan分类后得到的所有坐标，一个颜色是一类
@@ -160,21 +160,21 @@ start_time = time.time()
 label_16 = []
 for i in range(len(label_list)):
     if label_list[i][29] == '1':  # 根据文件名第29位进行识别，一下同理
-        label_16.append(np.append(np.copy(new_dim_points[i]), [i]))
+        label_16.append(np.append(np.copy(new_dim_points[i]), [int(i)]))
 label_16.append(np.append(np.copy(new_dim_points[-6]), [total_input - 6]))
 label_16.append(np.append(np.copy(new_dim_points[-5]), [total_input - 5]))
 
 label_64 = []
 for i in range(len(label_list)):
     if label_list[i][29] == '6':
-        label_64.append(np.append(np.copy(new_dim_points[i]), [i]))
+        label_64.append(np.append(np.copy(new_dim_points[i]), [int(i)]))
 label_64.append(np.append(np.copy(new_dim_points[-4]), [total_input - 4]))
 label_64.append(np.append(np.copy(new_dim_points[-3]), [total_input - 3]))
 
 label_Q = []
 for i in range(len(label_list)):
     if label_list[i][29] == 'Q':
-        label_Q.append(np.append(np.copy(new_dim_points[i]), [i]))
+        label_Q.append(np.append(np.copy(new_dim_points[i]), [int(i)]))
 label_Q.append(np.append(np.copy(new_dim_points[-2]), [total_input - 2]))
 label_Q.append(np.append(np.copy(new_dim_points[-1]), [total_input - 1]))
 
@@ -197,7 +197,6 @@ print("Time usage:", time_dif)
 
 # %%使用dbscan_label把坐标点分类，目前是三类，如有更多类需要更改，（用于验证，实际使用可以不用）
 print('get points seperated by dbscan...')
-assert len(dbscan_label) == total_cat
 assert dbscan_label[-6] == dbscan_label[-5]
 assert dbscan_label[-4] == dbscan_label[-3]
 assert dbscan_label[-2] == dbscan_label[-1]
@@ -212,7 +211,7 @@ for j in range(total_cat):
     counter = 0
     for i in range(len(dbscan_label)):
         if dbscan_label[i] == j:
-            temp_set.append(np.append(np.copy(new_dim_points[i]), [i]))
+            temp_set.append(np.append(np.copy(new_dim_points[i]), [int(i)]))
             counter += 1
     print(counter)
     #    assert counter == total_input/total_cat
@@ -238,6 +237,7 @@ incorrect_num = len(incorrect)
 
 correct = total_input - total_spy - incorrect_num
 accuracy = correct / (total_input - total_spy)
+print('Incorrect = ', incorrect_num)
 print('Accuracy = ', accuracy)
 
 # %%

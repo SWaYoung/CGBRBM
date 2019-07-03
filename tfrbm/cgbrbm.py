@@ -52,6 +52,7 @@ class CGBRBM(GBRBM):
         self.resize_height = resize_height
         self.resize_width = resize_width
         self.resize_method = resize_method
+        self.file_counter = 0
 
         # set convolution layers' weight and bias
         filter_shape = self.filter_sizes.copy()
@@ -138,7 +139,7 @@ class CGBRBM(GBRBM):
 
         errs = []
 
-        file_counter = 0
+
         for e in range(n_epochs):
             if verbose and not self._use_tqdm:
                 print('Epoch: {:d}'.format(e))
@@ -154,7 +155,7 @@ class CGBRBM(GBRBM):
             for _ in r_batches:
                 feature_temp, label_temp = self.sess.run([image_batch_get_next, label_batch_get_next])
                 convolved_images = self.sess.run(self.flatten, feed_dict={self.conv_input: feature_temp})
-                if file_counter == 0:  # 再第一遍的时候保存convolve之后的图片数据
+                if self.file_counter == 0:  # 再第一遍的时候保存convolve之后的图片数据
                     with open('./pickle/feature_obj' + str(self.matrix_counter).zfill(4) + '.pkl', 'wb') as p:
                         pickle.dump(convolved_images, p)
                     with open('./pickle/label_obj' + str(self.matrix_counter).zfill(4) + '.pkl', 'wb') as p:
@@ -177,7 +178,7 @@ class CGBRBM(GBRBM):
                 sys.stdout.flush()
 
             errs = np.hstack([errs, epoch_errs])
-            file_counter += 1
+            self.file_counter += 1
         return errs
 
     def ctransform(self,  # 通过输入之前保存的convolve之后的图片数据，得到cgbrbm的隐层

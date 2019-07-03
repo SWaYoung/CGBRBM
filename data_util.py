@@ -5,7 +5,7 @@ from collections import Counter
 import numpy as np
 import tensorflow as tf
 import os
-
+import natsort
 
 # def open_file(filename, mode='r'):
 #     return open(filename, mode, encoding='utf-8', errors='ignore')
@@ -36,8 +36,8 @@ def create_raw_data(dirname, num_each_cat):  # 通过路径和文件名 创建x,
     for i in range(len(cats)):
         dir_temp = next(iterator)
         for root, dirs, files in os.walk(dir_temp):
-            print(root)
-            for file in files[0:num_each_cat]:
+            print(root)            
+            for file in natsort.natsorted(files, reverse=True)[0:num_each_cat]:
                 if os.path.splitext(file)[1] == '.jpg':
                     data.append(os.path.join(dir_temp, file))
         print("finished: ", dir_temp)
@@ -61,6 +61,23 @@ def create_spy_data(dirname, total_spy):
                     data.append(os.path.join(dir_temp, file))
         print("finished: ", dir_temp)
     return np.array(data), np.array(data)
+
+def remove_data(dirname, num_each_cat):
+    cats = []
+    dirs = os.listdir(dirname)
+    for i in dirs:
+        temp = os.path.join(dirname, i)
+        if os.path.isdir(temp) and i != 'test' and i != 'spy' and i != 'archive' and i != 'result':
+            cats.append(temp)
+    iterator = iter(cats)
+    for i in range(len(cats)):
+        dir_temp = next(iterator)
+        for root, dirs, files in os.walk(dir_temp):
+            print(root)
+            for file in natsort.natsorted(files, reverse=True)[0:num_each_cat]:                
+                if os.path.splitext(file)[1] == '.jpg':
+                    os.remove(os.path.join(dir_temp, file))
+    print("{} removed".format(num_each_cat))
 
 # def create_raw_data(dirname, num_each_cat):
 #     labels = []

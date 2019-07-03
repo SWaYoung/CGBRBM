@@ -60,6 +60,37 @@ else:
 
 writer = tf.summary.FileWriter('.')
 writer.add_graph(tf.get_default_graph())
-x = 5
-def print5():
-    print(x)
+
+# 改名
+import os
+folders = os.listdir('.')
+for folder in folders:
+    file_root = os.path.join('.', folder)
+    files = os.listdir(file_root)
+    counter = 1
+    for file in files:
+        new_name = folder + '_' + str(counter) + '.jpg'
+        os.rename(os.path.join(file_root, file), os.path.join('.', new_name))
+        counter +=1
+#
+import shutil
+import os
+OSNR = 15
+for i in range(100):
+    shutil.copy2('064QAM/o.jpg', '064QAM/64QAM{}_{}.jpg'.format(OSNR, i+1))
+os.remove('064QAM/o.jpg')
+for i in range(100):
+    shutil.copy2('032QAM/o.jpg', '032QAM/32QAM{}_{}.jpg'.format(OSNR, i+1))
+os.remove('032QAM/o.jpg')
+for i in range(100):
+    shutil.copy2('016QAM/o.jpg', '016QAM/16QAM{}_{}.jpg'.format(OSNR, i+1))
+os.remove('016QAM/o.jpg')
+for i in range(100):
+    shutil.copy2('008QAM/o.jpg', '008QAM/8QAM{}_{}.jpg'.format(OSNR, i+1))
+os.remove('008QAM/o.jpg')
+for i in range(100):
+    shutil.copy2('QPSK/o.jpg', 'QPSK/QPSK{}_{}.jpg'.format(OSNR, i+1))
+os.remove('QPSK/o.jpg')
+
+
+        
